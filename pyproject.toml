@@ -5,10 +5,13 @@ description = ""
 authors = ["al.larin <al.larin1308@gmail.com>"]
 license = "MIT"
 readme = "README.md"
+package-mode = false
 
 [tool.poetry.dependencies]
 python = "^3.12"
 fastapi = "^0.115.4"
+uvicorn = {extras = ["standard"], version = "^0.32.0"}
+pydantic = {extras = ["email"], version = "^2.9.2"}
 
 [tool.poetry.group.dev.dependencies]
 pytest = "^8.3.3"
