@@ -1,11 +1,24 @@
+from contextlib import asynccontextmanager
+
 import uvicorn
 
 from fastapi import FastAPI, APIRouter
 from pydantic import EmailStr, BaseModel
-
+from api_v1 import router as router_v1
+from core.config import settings
 from item_views import router as items_router
+from core.models import Base, db_manager
 
-app = FastAPI()
+
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    async with db_manager.engine.begin() as conn:
+        await conn.run_sync(Base.metadata.create_all)
+    yield
+
+
+app = FastAPI(lifespan=lifespan)
+app.include_router(router_v1, prefix=settings.api_v1_prefix)
 app.include_router(items_router, tags=["Items"])
 
 
