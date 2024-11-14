@@ -7,13 +7,11 @@ from pydantic import EmailStr, BaseModel
 from api_v1 import router as router_v1
 from core.config import settings
 from item_views import router as items_router
-from core.models import Base, db_manager
 
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    async with db_manager.engine.begin() as conn:
-        await conn.run_sync(Base.metadata.create_all)
+
     yield
 
 
