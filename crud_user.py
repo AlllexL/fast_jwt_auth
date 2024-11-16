@@ -127,32 +127,40 @@ async def get_profiles_with_users_and_users_with_posts(session: AsyncSession):
         print("user = ", prof.user)
         print(prof.user.posts)
 
+async def main_relation(session: AsyncSession):
+    # await create_user(session=session, username="John")
+    # await create_user(session=session, username="sam")
+    # await create_user(session=session, username="alice")
+    # user1_jo = await get_user_by_username(session=session, username="John")
+    # user2 = await get_user_by_username(session=session, username="sam")
+
+    # id1 = int(user1.id)
+    # iiid = user1.username
+    # print(type(id1))
+    # await create_user_profile(
+    #     session=session, user_id=user1_jo.id, first_name="John", last_name="smith"
+    # )
+    # await create_user_profile(session=session, user_id=user2.id, first_name="sam")
+    # await snow_profiles(session=session)
+    # await create_posts(session, user1_jo.id, "SQL 2.0", "SQL Joins")
+    #
+    # await create_posts(
+    #     session, user2.id, "SQL Alchemy", "SQL Create", "DELETE Table"
+    # )
+    # await get_users_with_posts(session)
+    # await get_post_with_authors(session)
+    # await get_users_with_posts_and_profiles(session)
+    # await get_profiles_with_users_and_users_with_posts(session)
+    pass
+
+
+
+async def demo_m2m(sesion: AsyncSession):
+    pass
 
 async def main():
     async with db_manager.session_factory() as session:
-        # await create_user(session=session, username="John")
-        # await create_user(session=session, username="sam")
-        # await create_user(session=session, username="alice")
-        # user1_jo = await get_user_by_username(session=session, username="John")
-        # user2 = await get_user_by_username(session=session, username="sam")
-
-        # id1 = int(user1.id)
-        # iiid = user1.username
-        # print(type(id1))
-        # await create_user_profile(
-        #     session=session, user_id=user1_jo.id, first_name="John", last_name="smith"
-        # )
-        # await create_user_profile(session=session, user_id=user2.id, first_name="sam")
-        # await snow_profiles(session=session)
-        # await create_posts(session, user1_jo.id, "SQL 2.0", "SQL Joins")
-        #
-        # await create_posts(
-        #     session, user2.id, "SQL Alchemy", "SQL Create", "DELETE Table"
-        # )
-        # await get_users_with_posts(session)
-        # await get_post_with_authors(session)
-        # await get_users_with_posts_and_profiles(session)
-        await get_profiles_with_users_and_users_with_posts(session)
+       await main_relation(session)
 
 
 if __name__ == "__main__":
