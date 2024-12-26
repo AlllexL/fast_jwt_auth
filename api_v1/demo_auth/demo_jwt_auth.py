@@ -1,40 +1,36 @@
-import datetime
-
-from jwt.exceptions import InvalidTokenError
 from fastapi import APIRouter, Depends, Form, HTTPException, status
 from pydantic import BaseModel
+
+
+from .helpers import (
+    create_refresh_token,
+    create_access_token,
+)
 
 from users.schemas import UserSchemas
 from fastapi.security import (
     HTTPBearer,
-    HTTPAuthorizationCredentials,
-    OAuth2PasswordBearer,
 )
 from auth import utils as utils_auth
+from .validation import (
+    get_current_auth_user,
+    get_current_token_payload_user,
+    get_current_auth_user_for_refresh_token,
+    REFRESH_TOKEN_TYPE,
+    UserGetterFromToken,
+    get_auth_user_from_token_of_type,
+)
+from .fake_db import users_db
 
-router = APIRouter(prefix="/jwt", tags=["JWT"])
+http_bearer = HTTPBearer(auto_error=False)
+
+router = APIRouter(prefix="/jwt", tags=["JWT"], dependencies=[Depends(http_bearer)])
 
 
 class TokenInfo(BaseModel):
     access_token: str
-    token_type: str
-
-
-# http_bearer = HTTPBearer()
-oauth2_schema = OAuth2PasswordBearer(tokenUrl="/api/v1/jwt/login/")
-
-john = UserSchemas(
-    username="john",
-    password=utils_auth.hash_password("qwerty"),
-    email="john@example.com",
-)
-
-sam = UserSchemas(
-    username="sam",
-    password=utils_auth.hash_password("secret"),
-)
-
-users_db: dict[str, UserSchemas] = {john.username: john, sam.username: sam}
+    refresh_token: str | None = None
+    token_type: str = "Bearer"
 
 
 def validate_auth_user(username: str = Form(), password: str = Form()):
@@ -55,33 +51,6 @@ def validate_auth_user(username: str = Form(), password: str = Form()):
     return user
 
 
-def get_current_token_payload_user(
-    # credentials: HTTPAuthorizationCredentials = Depends(http_bearer),
-    token: str = Depends(oauth2_schema),
-) -> UserSchemas:
-    # token = credentials.credentials
-
-    try:
-        payload = utils_auth.decode_jwt(token=token)
-    except InvalidTokenError as e:
-        raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED, detail=f"invalid token error: {e}"
-        )
-    print(payload)
-    return payload
-
-
-def get_current_auth_user(
-    payload: dict = Depends(get_current_token_payload_user),
-) -> UserSchemas:
-    username: str | None = payload.get("sub")
-    if user := users_db.get(username):
-        return user
-    raise HTTPException(
-        status_code=status.HTTP_401_UNAUTHORIZED, detail="token invalid"
-    )
-
-
 def get_current_active_auth_user(user: UserSchemas = Depends(get_current_auth_user)):
     if user.active:
         return user
@@ -90,16 +59,24 @@ def get_current_active_auth_user(user: UserSchemas = Depends(get_current_auth_us
 
 @router.post("/login/", response_model=TokenInfo)
 def auth_user_issue_jwt(user: UserSchemas = Depends(validate_auth_user)):
-    jwt_payload = {
-        "sub": user.username,  # vmesto id
-        "username": user.username,
-        "email": user.email,
-    }
-    token = utils_auth.encode_jwt(jwt_payload)
-    return TokenInfo(access_token=token, token_type="Bearer")
+    access_token = create_access_token(user)
+    refresh_token = create_refresh_token(user)
+    return TokenInfo(
+        access_token=access_token,
+        refresh_token=refresh_token,
+    )
 
 
-@router.get("/users/me")
+@router.post("/refresh/", response_model=TokenInfo, response_model_exclude_none=True)
+def auth_user_refresh_token(
+    # user: UserSchemas = Depends(get_auth_user_from_token_of_type(REFRESH_TOKEN_TYPE)),
+    user: UserSchemas = Depends(get_current_auth_user_for_refresh_token),
+):
+    access_token = create_access_token(user)
+    return TokenInfo(access_token=access_token)
+
+
+@router.get("/users/me/")
 def auth_user_check_self_info(
     payload: dict = Depends(get_current_token_payload_user),
     user: UserSchemas = Depends(get_current_active_auth_user),
